@@ -1,5 +1,7 @@
 import pygame # type: ignore
 from typing import Union
+import tkinter as tk
+from tkinter import FALSE, messagebox
 
 # Size and Flags
 SIZE = (300, 300)
@@ -44,8 +46,30 @@ class Board():
                     self._screen.blit(text, text_rect)
                 i += 1
 
-    def draw_winner(self, winner: str):
-        pass
+    def draw_winner(self, winner: str) -> bool:
+        root = tk.Tk()
+        root.withdraw()
+
+        response = messagebox.askyesno("Winner!", "Player {player} won!\nDo you want to play again?".format(player=winner))
+        root.quit()
+        
+        if response:
+            return True
+        else:
+            return False
+        
+
+    def draw_draw(self) -> bool:
+        root = tk.Tk()
+        root.withdraw()
+
+        response = messagebox.askyesno("Draw!", "Draw!\nDo you want to play again?")
+        root.quit()
+        
+        if response:
+            return True
+        else:
+            return False
 
 # Controller
 class Game():
@@ -56,6 +80,7 @@ class Game():
         self.turn = 'O'
         self.draw = False
         self.winner = False
+        self.again = False
         try:
             self.screen = pygame.display.set_mode(SIZE, FLAGS)
             self.timer = pygame.time.Clock()
@@ -83,9 +108,11 @@ class Game():
                         # Check if we have drawn or won, if not then pass the turn over
                         if self.has_draw():
                             # Announce draw
+                            self.GUI() # We are drawing here such that the last move is rendered in before the tkinter box pops up
                             self.announce_draw()
                         elif self.has_winner():
                             # Announce winner
+                            self.GUI() # We are drawing here such that the last move is rendered in before the tkinter box pops up
                             self.announce_winner()
                         else:
                             # Pass the turn over
@@ -93,6 +120,11 @@ class Game():
                 if event.type == pygame.QUIT:
                     self._run = False
             
+            # Play Again?
+            if self.again:
+                self.setup()
+
+
             # GUI Shenanigans
             self.GUI()
     
@@ -102,14 +134,14 @@ class Game():
         # Draw the board
         self.board.draw_grid()
         self.board.draw_symbol(self.get_board())
-        # If it is a draw or if there is a winner, draw the respective message
-        if self.has_winner():
-            # draw winner message
-            self.board.draw_winner(self.get_turn())
-        elif self.has_draw():
-            # draw draw message
-            pass
         pygame.display.update()
+
+    def setup(self):
+        self.board_state = [None] * 9
+        self.turn = 'O'
+        self.draw = False
+        self.winner = False
+        self.again = False
 
     def has_draw(self) -> bool:
         return self.draw
@@ -123,10 +155,10 @@ class Game():
         return None
 
     def announce_draw(self):
-        print("DRAW")
+        self.again = self.board.draw_draw()
 
     def announce_winner(self):
-        print("WINNER:", self.get_turn())
+        self.again = self.board.draw_winner(self.get_turn())
     
     def pass_turn(self):
         if self.get_turn() == 'O':
