@@ -19,16 +19,40 @@ class Game():
         self.board_state = [None] * 9
         self.board = Board()
         self.turn = 'O'
+        self.draw = False
 
     def play(self):
         while True:
             # Get valid user input
             user_input = self.get_input()
             self.add_input(user_input)
+            # Check for winner
             if self.check_winner():
                 break
+            # Check for draw
+            if self.check_draw():
+                break
+            # Pass the turn over
             self.pass_turn()
-        self.announce_winner()
+        # Check if we have drawn
+        if self.has_draw():
+            # Announce draw
+            self.announce_draw()
+        else:
+            # Announce winner
+            self.announce_winner()
+
+    def has_draw(self) -> bool:
+        return self.draw
+
+    def check_draw(self ) -> bool:
+        if None not in self.get_board():
+            self.draw = True
+            return True
+        return False
+
+    def announce_draw(self):
+        print("DRAW")
 
     def announce_winner(self):
         print("WINNER:", self.get_turn())
@@ -41,9 +65,9 @@ class Game():
 
     def check_winner(self) -> bool:
         # Get the current turn player's board
-        cur_player_board = [pos if pos == self.get_turn() else None for pos in self.get_board()]
+        board = self.get_board()
         for triad in winning_triad:
-            if cur_player_board[triad[0]] == cur_player_board[triad[1]] == cur_player_board[triad[2]] and cur_player_board[triad[0]] != None:
+            if board[triad[0]] == board[triad[1]] == board[triad[2]] and board[triad[0]] != None:
                 return True
         return False
 
