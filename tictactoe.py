@@ -1,5 +1,4 @@
-# temp comment for now until the logic for the game is finished
-import pygame
+import pygame # type: ignore
 from typing import Union
 
 # Size and Flags
@@ -45,6 +44,9 @@ class Board():
                     self._screen.blit(text, text_rect)
                 i += 1
 
+    def draw_winner(self, winner: str):
+        pass
+
 # Controller
 class Game():
     def __init__(self):
@@ -66,33 +68,33 @@ class Game():
             raise
 
     def play(self):
-        while self._run and self.winner == False and self.draw == False:
+        while self._run:
 
             for event in pygame.event.get():
                 # If user has clicked mouse 1
-                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                if (event.type == pygame.MOUSEBUTTONDOWN) and (event.button == 1) and not (self.has_winner() or self.has_draw()):
                     x, y = event.pos[0] // CELL_SIZE, event.pos[1] // CELL_SIZE # Convert to between 0 and 2
                     index = x + y * 3
                     if self.add_input(index):
-                        # Pass the turn over
-                        self.pass_turn()
                         # Check for winner
                         self.check_winner()
                         # Check for draw
                         self.check_draw()
+                        # Check if we have drawn or won, if not then pass the turn over
+                        if self.has_draw():
+                            # Announce draw
+                            self.announce_draw()
+                        elif self.has_winner():
+                            # Announce winner
+                            self.announce_winner()
+                        else:
+                            # Pass the turn over
+                            self.pass_turn()
                 if event.type == pygame.QUIT:
                     self._run = False
             
             # GUI Shenanigans
             self.GUI()
-
-        # Check if we have drawn
-        if self.has_draw():
-            # Announce draw
-            self.announce_draw()
-        else:
-            # Announce winner
-            self.announce_winner()
     
     def GUI(self):
         self.timer.tick(self.fps)
@@ -100,13 +102,23 @@ class Game():
         # Draw the board
         self.board.draw_grid()
         self.board.draw_symbol(self.get_board())
+        # If it is a draw or if there is a winner, draw the respective message
+        if self.has_winner():
+            # draw winner message
+            self.board.draw_winner(self.get_turn())
+        elif self.has_draw():
+            # draw draw message
+            pass
         pygame.display.update()
 
     def has_draw(self) -> bool:
         return self.draw
 
+    def has_winner(self) -> bool:
+        return self.winner
+
     def check_draw(self):
-        if None not in self.get_board():
+        if None not in self.get_board() and not self.has_winner():
             self.draw = True
         return None
 
