@@ -1,6 +1,15 @@
 # temp comment for now until the logic for the game is finished
-#import pygame
+import pygame
 from typing import Union
+
+# Size and Flags
+SIZE = (300, 300)
+FLAGS = 0
+CELL_SIZE = 300 // 3
+# Colours
+WHITE = (255, 255, 255)
+GRAY = (128, 128, 128)
+BLACK = (0, 0, 0)
 
 winning_triad = [
     (0, 1, 2), (3, 4, 5), (6, 7, 8),    # Rows
@@ -10,30 +19,73 @@ winning_triad = [
 
 # Board (serves as GUI mostly)
 class Board():
-    def __init__(self):
-        pass
+    def __init__(self, screen: pygame):
+        self._screen = screen
+        self.font = pygame.font.Font(None, 100)
+
+    def draw_grid(self):
+        alt = True
+        for row in range(3):
+            for col in range(3):
+                if alt:
+                    pygame.draw.rect(self._screen, WHITE, [col * 100, row * 100, CELL_SIZE, CELL_SIZE])
+                else:
+                    pygame.draw.rect(self._screen, GRAY, [col * 100, row * 100, CELL_SIZE, CELL_SIZE])
+                alt = not alt
+
+    def draw_symbol(self, board: tuple[Union[None, str]]):
+        i = 0
+        for row in range(3):
+            for col in range(3):
+                area = board[i]
+                if area != None:
+                    text = self.font.render(area, True, BLACK)
+                    # Get the center of the cell
+                    text_rect = text.get_rect(center = (col * CELL_SIZE + CELL_SIZE // 2, row * CELL_SIZE + CELL_SIZE // 2))
+                    self._screen.blit(text, text_rect)
+                i += 1
 
 # Controller
 class Game():
     def __init__(self):
+        # Initialise pygames
+        pygame.init()
         self.board_state = [None] * 9
-        self.board = Board()
         self.turn = 'O'
         self.draw = False
+        self.winner = False
+        try:
+            self.screen = pygame.display.set_mode(SIZE, FLAGS)
+            self.timer = pygame.time.Clock()
+            self.fps = 60
+            self._run = True
+            pygame.display.set_caption("TicTacToe")
+            self.board = Board(self.screen)
+        except Exception:
+            pygame.quit()
+            raise
 
     def play(self):
-        while True:
-            # Get valid user input
-            user_input = self.get_input()
-            self.add_input(user_input)
-            # Check for winner
-            if self.check_winner():
-                break
-            # Check for draw
-            if self.check_draw():
-                break
-            # Pass the turn over
-            self.pass_turn()
+        while self._run and self.winner == False and self.draw == False:
+
+            for event in pygame.event.get():
+                # If user has clicked mouse 1
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    x, y = event.pos[0] // CELL_SIZE, event.pos[1] // CELL_SIZE # Convert to between 0 and 2
+                    index = x + y * 3
+                    if self.add_input(index):
+                        # Pass the turn over
+                        self.pass_turn()
+                        # Check for winner
+                        self.check_winner()
+                        # Check for draw
+                        self.check_draw()
+                if event.type == pygame.QUIT:
+                    self._run = False
+            
+            # GUI Shenanigans
+            self.GUI()
+
         # Check if we have drawn
         if self.has_draw():
             # Announce draw
@@ -41,15 +93,22 @@ class Game():
         else:
             # Announce winner
             self.announce_winner()
+    
+    def GUI(self):
+        self.timer.tick(self.fps)
+        self.screen.fill(WHITE)
+        # Draw the board
+        self.board.draw_grid()
+        self.board.draw_symbol(self.get_board())
+        pygame.display.update()
 
     def has_draw(self) -> bool:
         return self.draw
 
-    def check_draw(self ) -> bool:
+    def check_draw(self):
         if None not in self.get_board():
             self.draw = True
-            return True
-        return False
+        return None
 
     def announce_draw(self):
         print("DRAW")
@@ -63,17 +122,20 @@ class Game():
         else:
             self.turn = 'O'
 
-    def check_winner(self) -> bool:
+    def check_winner(self):
         # Get the current turn player's board
         board = self.get_board()
         for triad in winning_triad:
             if board[triad[0]] == board[triad[1]] == board[triad[2]] and board[triad[0]] != None:
-                return True
-        return False
+                self.winner = True
+        return None
 
-    def add_input(self, user_input: int):
-        # Add the user input into the board
-        self.board_state[user_input] = self.get_turn()
+    def add_input(self, user_input: int) -> bool:
+        # Attempt to add the input in, return True if it succeeds else False
+        if self.board_state[user_input] == None:
+            self.board_state[user_input] = self.get_turn()
+            return True
+        return False
 
     def get_turn(self) -> str:
         return self.turn
