@@ -1,7 +1,8 @@
 import pygame # type: ignore
 from typing import Union
 import tkinter as tk
-from tkinter import FALSE, messagebox
+from tkinter import messagebox
+import random
 
 # Size and Flags
 SIZE = (300, 300)
@@ -73,7 +74,7 @@ class Board():
 
 # Controller
 class Game():
-    def __init__(self):
+    def __init__(self, difficulty=None):
         # Initialise pygames
         pygame.init()
         self.board_state = [None] * 9
@@ -81,6 +82,7 @@ class Game():
         self.draw = False
         self.winner = False
         self.again = False
+        self.difficulty = difficulty
         try:
             self.screen = pygame.display.set_mode(SIZE, FLAGS)
             self.timer = pygame.time.Clock()
@@ -92,12 +94,67 @@ class Game():
             pygame.quit()
             raise
 
-    def play(self):
+    def playFriends(self):
         while self._run:
 
             for event in pygame.event.get():
                 # If user has clicked mouse 1
                 if (event.type == pygame.MOUSEBUTTONDOWN) and (event.button == 1) and not (self.has_winner() or self.has_draw()):
+                    x, y = event.pos[0] // CELL_SIZE, event.pos[1] // CELL_SIZE # Convert to between 0 and 2
+                    index = x + y * 3 # Calculating the cell index from mouse position
+                    if self.add_input(index):
+                        # Check for winner
+                        self.check_winner()
+                        # Check for draw
+                        self.check_draw()
+                        # Check if we have drawn or won, if not then pass the turn over
+                        if self.has_draw():
+                            # Announce draw
+                            self.GUI() # We are drawing here such that the last move is rendered in before the tkinter box pops up
+                            self.announce_draw()
+                        elif self.has_winner():
+                            # Announce winner
+                            self.GUI() # We are drawing here such that the last move is rendered in before the tkinter box pops up
+                            self.announce_winner()
+                        else:
+                            # Pass the turn over
+                            self.pass_turn()
+                if event.type == pygame.QUIT:
+                    self._run = False
+            
+            # Play Again?
+            if self.again:
+                self.setup()
+
+
+            # GUI Shenanigans
+            self.GUI()
+    
+    def playComputer(self):
+        while self._run:
+            # Check if it is AI turn
+            if self.get_turn() == 'X':
+                self.do_move()
+                # Check for winner
+                self.check_winner()
+                # Check for draw
+                self.check_draw()
+                # Check if we have drawn or won, if not then pass the turn over
+                if self.has_draw():
+                    # Announce draw
+                    self.GUI() # We are drawing here such that the last move is rendered in before the tkinter box pops up
+                    self.announce_draw()
+                elif self.has_winner():
+                    # Announce winner
+                    self.GUI() # We are drawing here such that the last move is rendered in before the tkinter box pops up
+                    self.announce_winner()
+                else:
+                    # Pass the turn over
+                    self.pass_turn()
+
+            for event in pygame.event.get():
+                # If user has clicked mouse 1
+                if (event.type == pygame.MOUSEBUTTONDOWN) and (event.button == 1) and not (self.has_winner() or self.has_draw()) and (self.get_turn() == 'O'):
                     x, y = event.pos[0] // CELL_SIZE, event.pos[1] // CELL_SIZE # Convert to between 0 and 2
                     index = x + y * 3 # Calculating the cell index from mouse position
                     if self.add_input(index):
@@ -135,6 +192,18 @@ class Game():
         self.board.draw_grid()
         self.board.draw_symbol(self.get_board())
         pygame.display.update()
+
+    def do_move(self):
+        if self.difficulty == 0:
+            self.easy()
+
+
+    def easy(self):
+        # Random AI
+        available_moves = [i for i, spot in enumerate(self.get_board()) if spot == None]
+        choice = random.choice(available_moves)
+        self.add_input(choice)
+
 
     def setup(self):
         self.board_state = [None] * 9
@@ -188,5 +257,15 @@ class Game():
         return self.board_state
 
 if __name__ == "__main__":
-    game = Game()
-    game.play()
+    try:
+        friends = int(input("0: AI\nNon-Zero: Friends\nInput: "))
+        if friends:
+            game = Game()
+            game.playFriends()
+        else:
+            difficulty = int(input("0: Easy\n1: Medium\n2: Impossible\nInput: "))
+            game = Game(difficulty)
+            game.playComputer()
+
+    except ValueError:
+        print("Input 0 or 1 pls")
