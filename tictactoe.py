@@ -6,7 +6,7 @@ from tkinter import FALSE, messagebox
 # Size and Flags
 SIZE = (300, 300)
 FLAGS = 0
-CELL_SIZE = 300 // 3
+CELL_SIZE = 100
 # Colours
 WHITE = (255, 255, 255)
 GRAY = (128, 128, 128)
@@ -99,7 +99,7 @@ class Game():
                 # If user has clicked mouse 1
                 if (event.type == pygame.MOUSEBUTTONDOWN) and (event.button == 1) and not (self.has_winner() or self.has_draw()):
                     x, y = event.pos[0] // CELL_SIZE, event.pos[1] // CELL_SIZE # Convert to between 0 and 2
-                    index = x + y * 3
+                    index = x + y * 3 # Calculating the cell index from mouse position
                     if self.add_input(index):
                         # Check for winner
                         self.check_winner()
@@ -183,41 +183,6 @@ class Game():
 
     def get_turn(self) -> str:
         return self.turn
-    
-    def get_input(self) -> int:
-        while True:
-            # Get user input
-            move = input("Enter move: ")
-            # Check user input
-            valid_tuple = self.valid_input(move)
-            # If user input is not valid, continue
-            if valid_tuple is None:
-                print("Invalid Input! Type a valid integer between 0 and 8 inclusive")
-            else:
-                break
-
-        return valid_tuple
-
-
-    def valid_input(self, user_input: str) -> Union[None, int]:
-        # Check the length of the inputs
-        if len(user_input) != 1:
-            return None
-        
-        try:
-            # Attempt to convert parts into int
-            num = int(user_input)
-        except ValueError:
-            return None # Conversion failed
-        
-        # Check the row and col
-        if not (0 <= num <= 8):
-            return None
-    
-        # Check if the row and col is taken
-        if self.get_board()[num] is not None:
-            return None
-        return num
     
     def get_board(self) -> tuple[Union[None, str]]:
         return self.board_state
