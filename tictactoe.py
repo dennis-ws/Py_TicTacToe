@@ -1,3 +1,4 @@
+from tkinter import W
 import pygame # type: ignore
 from typing import Union, List
 import random
@@ -279,15 +280,19 @@ class Game():
         return self.board_state
 
 if __name__ == "__main__":
-    try:
-        friends = int(input("0: AI\nNon-Zero: Friends\nInput: "))
-        if friends:
-            game = Game()
-            game.playFriends()
-        else:
-            difficulty = int(input("0: Easy\n1: Medium\n2: Impossible\nInput: "))
-            game = Game(difficulty)
-            game.playComputer()
-
-    except ValueError:
-        print("Input 0 or 1 pls")
+    # Ask user if they want to play with friends or AI
+    friends = input("0: AI\n1: Friends\nInput: ")
+    while friends != "0" and friends != "1":
+        friends = input("Invalid Input!\n0: AI\n1: Friends\nInput: ")
+    if friends == "1":
+        # Start Game with Friends
+        game = Game()
+        game.playFriends()
+    elif friends == "0":
+        # Ask user what difficulty they want
+        difficulty = input("0: Easy\n1: Impossible\nInput: ")
+        while difficulty != "0" and difficulty != "1":
+            difficulty = input("Invalid Input!0: Easy\n1: Medium\nInput: ")
+        # Start Game with AI        
+        game = Game(int(difficulty))
+        game.playComputer()
